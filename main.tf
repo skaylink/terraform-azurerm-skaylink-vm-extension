@@ -15,14 +15,133 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # For questions and contributions please contact info@iq3cloud.com
-resource "azurerm_resource_group" "resourcegroup" {
-  name     = var.name
-  location = var.location
-  tags = {
-    customTag1 = var.customTag1
-    customTag2 = var.customTag2
-    customTag3 = var.customTag3
-    customTag4 = var.customTag4
-    customTag5 = var.customTag5
+
+## DISK encryption 
+resource "azurerm_virtual_machine_extension" "diskextension" {
+  count                = lower(var.vm_os_type) == "windows" ? 1 : 0
+  name                 = "DiskEncryptionWIndows"
+  virtual_machine_id   = data.azurerm_virtual_machine.vm.id
+  publisher            = "Microsoft.Azure.Security"
+  type                 = "AzureDiskEncryption"
+  type_handler_version = "1.1"
+  settings             = <<SETTINGS
+    {
+        "AADClientID" : "${data.azurerm_client_config.current.client_id}",
+        "EncryptionOperation": "EnableEncryption",
+        "KeyVaultURL": "${data.azurerm_key_vault.keyvault.vault_uri}",
+        "KeyVaultResourceId": "${data.azurerm_key_vault.keyvault.id}",					
+        "KeyEncryptionKeyURL": "${var.encryption_key_url}",
+        "KekVaultResourceId": "${data.azurerm_key_vault.keyvault.id}",					
+        "KeyEncryptionAlgorithm": "${var.encryption_algorithm}",
+        "VolumeType": "${var.volume_type}"
+    }
+SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+      "AADClientSecret" : "${data.azurerm_key_vault_secret.secret_disk_encryption.value}"
+    }
+PROTECTED_SETTINGS
+
+}
+
+resource "azurerm_virtual_machine_extension" "diskextensionlinux" {
+  count                = lower(var.vm_os_type) == "linux" ? 1 : 0
+  name                 = "DiskEncryptionLinux"
+  virtual_machine_id   = data.azurerm_virtual_machine.vm.id
+  publisher            = "Microsoft.Azure.Security"
+  type                 = "AzureDiskEncryptionForLinux"
+  type_handler_version = "1.1"
+
+  settings = <<SETTINGS
+    {
+        "AADClientID" : "${data.azurerm_client_config.current.client_id}",
+        "EncryptionOperation": "EnableEncryption",
+        "KeyVaultURL": "${data.azurerm_key_vault.keyvault.vault_uri}",
+        "KeyVaultResourceId": "${data.azurerm_key_vault.keyvault.id}",					
+        "KeyEncryptionKeyURL": "${var.encryption_key_url}",
+        "KekVaultResourceId": "${data.azurerm_key_vault.keyvault.id}",					
+        "KeyEncryptionAlgorithm": "${var.encryption_algorithm}",
+        "VolumeType": "${var.volume_type}",
+        "SkipVmBackup" : true
+    }
+SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+      "AADClientSecret" : "${data.azurerm_key_vault_secret.secret_disk_encryption.value}"
+    }
+PROTECTED_SETTINGS
+
+}
+
+### OMS Agent
+resource "azurerm_virtual_machine_extension" "monitoringWindows" {
+  count                = lower(var.vm_os_type) == "windows" ? 1 : 0
+  name                 = "monitoringagent"
+  virtual_machine_id   = data.azurerm_virtual_machine.vm.id
+  publisher            = "Microsoft.EnterpriseCloud.Monitoring"
+  type                 = "MicrosoftMonitoringAgent"
+  type_handler_version = "1.0"
+
+  settings = <<SETTINGS
+        {
+          "workspaceId": "${var.workspace_id}"
+        }
+SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+        {
+          "workspaceKey": "${var.workspace_key}"
+        }
+PROTECTED_SETTINGS
+}
+
+resource "azurerm_virtual_machine_extension" "monitoringLinux" {
+  count                = lower(var.vm_os_type) == "linux" ? 1 : 0
+  name                 = "OmsAgentForLinux"
+  virtual_machine_id   = data.azurerm_virtual_machine.vm.id
+  publisher            = "Microsoft.EnterpriseCloud.Monitoring"
+  type                 = "OmsAgentForLinux"
+  type_handler_version = "1.8"
+
+  settings = <<SETTINGS
+    {
+        "workspaceId": "${var.workspace_id}"
+    }
+SETTINGS
+
+  protected_settings = <<PROTECTEDSETTINGS
+    {
+        "workspaceKey": "${var.workspace_key}"
+    }
+PROTECTEDSETTINGS
+}
+
+resource "azurerm_virtual_machine_extension" "antimalware" {
+  count                = lower(var.vm_os_type) == "windows" ? 1 : 0
+  name                 = "AntiMalware"
+  virtual_machine_id   = data.azurerm_virtual_machine.vm.id
+  publisher            = "Microsoft.Azure.Security"
+  type                 = "IaaSAntimalware"
+  type_handler_version = "1.5"
+
+  settings = <<SETTINGS
+  {
+    "AntimalwareEnabled": true,
+    "RealtimeProtectionEnabled": "true",
+    "ScheduledScanSettings": {
+      "isEnabled": "true",
+      "day": "7",
+      "time": "120",
+      "scanType": "Quick"
+    },
+    "Exclusions": {
+        "Extensions": "",
+        "Paths": "",
+        "Processes": ""
+    }
   }
+  SETTINGS
+
 }

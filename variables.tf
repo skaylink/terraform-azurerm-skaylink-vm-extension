@@ -16,38 +16,44 @@
 
 # For questions and contributions please contact info@iq3cloud.com
 
-variable "name" {
-  type        = string
-  description = "The name of the resource group you are deploying"
+variable "vm_name" {
+  description = "Name of the VM to encrypt"
 }
 
-variable "location" {
-  type        = string
-  description = "The location of the resource group, defaults to west Europe"
-  default     = "westeurope"
+variable "vm_os_type" {
+  description = "Type of OS. Allowed values are Windows and Linux. Defaults to Linux"
+  default     = "linux"
 }
 
-variable "customTag1" {
-  type        = string
-  description = "the first customTag"
+variable "resource_group_name" {
+  description = "Default resource group name that the network will be created in"
 }
 
-variable "customTag2" {
-  type        = string
-  description = "the second customTag"
+variable "key_vault_name" {
+  description = "Name of the keyVault"
 }
 
-variable "customTag3" {
-  type        = string
-  description = "the third customTag"
+variable "key_vault_secret_name" {
+  description = "Name of the keyVault"
 }
 
-variable "customTag4" {
-  type        = string
-  description = "the fourth customTag"
+variable "encryption_key_url" {
+  description = "URL to encrypt Key"
 }
 
-variable "customTag5" {
-  type        = string
-  description = "the fifth customTag"
+variable "encryption_algorithm" {
+  description = "Algorithm for encryption"
+  default     = "RSA-OAEP"
+}
+
+variable "volume_type" {
+  default = "All"
+}
+
+variable "workspace_id" {
+  description = "Workspace ID for deployment of OMS agent"
+}
+
+variable "workspace_key" {
+  description = "Workspace key for deployment of OMS agent"
 }

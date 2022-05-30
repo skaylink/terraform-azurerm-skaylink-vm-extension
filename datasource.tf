@@ -15,3 +15,21 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # For questions and contributions please contact info@iq3cloud.com
+
+data "azurerm_key_vault" "keyvault" {
+  name                = var.key_vault_name
+  resource_group_name = var.resource_group_name
+}
+
+data "azurerm_virtual_machine" "vm" {
+  name                = var.vm_name
+  resource_group_name = var.resource_group_name
+}
+
+data "azurerm_key_vault_secret" "secret_disk_encryption" {
+  name         = var.key_vault_secret_name
+  key_vault_id = data.azurerm_key_vault.keyvault.id
+}
+
+data "azurerm_client_config" "current" {
+}
